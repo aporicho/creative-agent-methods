@@ -9,7 +9,7 @@ The source of truth is still:
 - `schemas/`
 - `adapters/`
 
-Platform files should be thin wrappers. If behavior changes, update the source role or workflow first, then mirror the minimum necessary instruction into each platform package.
+Installed platform files must be self-contained because the remote installer downloads only the selected platform's files. If behavior changes, update the source role or workflow first, then mirror the necessary instruction into each platform package.
 
 ## Targets
 
@@ -33,7 +33,7 @@ Use the remote installer:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)"
 ```
 
-The installer asks for a platform, downloads only that platform's required files, and writes them to the target destination.
+The installer asks for a platform, downloads only that platform's required files, and writes them to the target destination. The installed files do not depend on this repository being present locally.
 
 Direct target install:
 
@@ -53,4 +53,4 @@ Maintainers can also use the repository CLI from a local checkout:
 ./bin/creative-agent-methods install openclaw --dest /path/to/project/.openclaw/agents
 ```
 
-Use `--mode link` when you want the target platform to read directly from this repository, or the default copy mode when the target platform should receive standalone files.
+Use `--mode link` only for repository development. The default copy mode installs standalone files.

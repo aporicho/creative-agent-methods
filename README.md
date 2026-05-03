@@ -86,6 +86,8 @@ Interactive install:
 
 The installer asks which platform to install, downloads only the required skill or agent files, and writes them to the platform destination.
 
+The installed platform files are self-contained. They do not require this repository, the `roles/` directory, or the `adapters/` directory to exist on the user's machine.
+
 Direct install:
 
 ```bash
