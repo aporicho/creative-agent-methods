@@ -79,23 +79,23 @@ When adding a new backend, add a file under `adapters/` that explains capability
 
 This package ships a lightweight installer for installing only the files needed by the selected platform.
 
-Interactive install:
+Interactive install for humans:
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)"
+curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash
 ```
 
 The installer asks which platform to install, downloads only the required role, adapter, and template files, generates self-contained skill or agent files, and writes them to the platform destination.
 
 The installed platform files are self-contained. They do not require this repository, the `roles/` directory, or the `adapters/` directory to exist on the user's machine.
 
-Direct install:
+Agent-friendly direct install:
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- codex
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- claude
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- opencode --project .
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- openclaw --project .
+curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash -s -- codex --force
+curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash -s -- claude --force
+curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash -s -- opencode --project . --force
+curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash -s -- openclaw --project . --force
 ```
 
 The remote installer does not clone this repository, does not install a global CLI, and does not keep a package copy on disk.

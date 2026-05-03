@@ -9,8 +9,8 @@ usage() {
 Creative Agent Methods installer
 
 Usage:
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)"
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- <target> [options]
+  curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash -s -- <target> [options]
 
 Targets:
   codex      Install Codex skills.
@@ -35,11 +35,11 @@ Environment:
   OPENCLAW_AGENTS_DIR                Default OpenClaw destination.
 
 Examples:
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)"
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- codex
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- claude
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- opencode --project .
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- openclaw --project .
+  curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash -s -- codex --force
+  curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash -s -- claude --force
+  curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash -s -- opencode --project . --force
+  curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash -s -- openclaw --project . --force
 EOF
 }
 

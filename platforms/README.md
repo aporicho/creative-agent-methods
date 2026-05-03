@@ -31,7 +31,7 @@ Do not commit generated platform files. Keep long-form method content in `roles/
 Use the remote installer:
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)"
+curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash
 ```
 
 The installer asks for a platform, downloads the required role, adapter, and template files, renders self-contained output, and writes it to the target destination. The installed files do not depend on this repository being present locally.
@@ -39,10 +39,10 @@ The installer asks for a platform, downloads the required role, adapter, and tem
 Direct target install:
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- codex
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- claude
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- opencode --project .
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- openclaw --project .
+curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash -s -- codex --force
+curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash -s -- claude --force
+curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash -s -- opencode --project . --force
+curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh | bash -s -- openclaw --project . --force
 ```
 
 Use `--dry-run` to preview the generated output paths without writing files.
