@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VisualConcept",
+  "type": "object",
+  "required": ["id", "title", "core", "story_moment", "primary_subject", "environment", "camera", "composition", "style", "constraints"],
+  "properties": {
+    "id": {"type": "string"},
+    "title": {"type": "string"},
+    "core": {"type": "string"},
+    "story_moment": {"type": "string"},
+    "primary_subject": {"type": "string"},
+    "environment": {"type": "string"},
+    "camera": {"type": "string"},
+    "composition": {"type": "string"},
+    "implication": {"type": "string"},
+    "style": {"type": "string"},
+    "constraints": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

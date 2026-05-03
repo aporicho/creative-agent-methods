@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PromptPackage",
+  "type": "object",
+  "required": ["id", "title", "positive_prompt", "negative_prompt"],
+  "properties": {
+    "id": {"type": "string"},
+    "title": {"type": "string"},
+    "project_prompt": {"type": "string"},
+    "group_prompt": {"type": "string"},
+    "positive_prompt": {"type": "string"},
+    "negative_prompt": {"type": "string"},
+    "notes": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

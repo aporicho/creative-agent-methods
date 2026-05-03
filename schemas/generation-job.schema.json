@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GenerationJob",
+  "type": "object",
+  "required": ["job_id", "title", "backend", "model", "outputs", "body"],
+  "properties": {
+    "job_id": {"type": "string"},
+    "title": {"type": "string"},
+    "backend": {"type": "string"},
+    "model": {"type": "string"},
+    "mode": {"type": "string"},
+    "outputs": {"type": "integer", "minimum": 1},
+    "body": {"type": "object"}
+  },
+  "additionalProperties": true
+}
