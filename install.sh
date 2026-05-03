@@ -148,43 +148,6 @@ default_dest() {
   esac
 }
 
-manifest() {
-  local target="$1"
-  case "$target" in
-    codex)
-      cat <<'EOF'
-platforms/codex/skills/concept-designer/SKILL.md|concept-designer/SKILL.md
-platforms/codex/skills/aigc-prompt-designer/SKILL.md|aigc-prompt-designer/SKILL.md
-platforms/codex/skills/generation-operator/SKILL.md|generation-operator/SKILL.md
-EOF
-      ;;
-    claude)
-      cat <<'EOF'
-platforms/claude/skills/concept-designer/SKILL.md|concept-designer/SKILL.md
-platforms/claude/skills/aigc-prompt-designer/SKILL.md|aigc-prompt-designer/SKILL.md
-platforms/claude/skills/generation-operator/SKILL.md|generation-operator/SKILL.md
-EOF
-      ;;
-    opencode)
-      cat <<'EOF'
-platforms/opencode/agents/concept-designer.md|concept-designer.md
-platforms/opencode/agents/aigc-prompt-designer.md|aigc-prompt-designer.md
-platforms/opencode/agents/generation-operator.md|generation-operator.md
-EOF
-      ;;
-    openclaw)
-      cat <<'EOF'
-platforms/openclaw/agents/concept-designer.md|concept-designer.md
-platforms/openclaw/agents/aigc-prompt-designer.md|aigc-prompt-designer.md
-platforms/openclaw/agents/generation-operator.md|generation-operator.md
-EOF
-      ;;
-    *)
-      die "unknown target: $target"
-      ;;
-  esac
-}
-
 download_file() {
   local source_path="$1"
   local output_path="$2"
@@ -203,19 +166,60 @@ download_file() {
   fi
 }
 
+template_kind() {
+  case "$1" in
+    codex|claude) printf 'skill\n' ;;
+    opencode|openclaw) printf 'agent\n' ;;
+    *) die "unknown target: $1" ;;
+  esac
+}
+
+output_path_for_role() {
+  local kind="$1"
+  local role="$2"
+
+  case "$kind" in
+    skill) printf '%s/SKILL.md\n' "$role" ;;
+    agent) printf '%s.md\n' "$role" ;;
+    *) die "unknown template kind: $kind" ;;
+  esac
+}
+
+render_template() {
+  local template_file="$1"
+  local role_file="$2"
+  local adapter_file="$3"
+  local output_file="$4"
+  local template role_body adapter_body rendered
+
+  template="$(cat "$template_file")"
+  role_body="$(cat "$role_file")"
+  adapter_body=""
+  if [[ -n "$adapter_file" ]]; then
+    adapter_body="$(cat "$adapter_file")"
+  fi
+
+  rendered="${template//'{{ROLE_BODY}}'/$role_body}"
+  rendered="${rendered//'{{LOVART_ADAPTER_BODY}}'/$adapter_body}"
+  printf '%s\n' "$rendered" > "$output_file"
+}
+
 install_target() {
   local target="$1"
   local dest="$2"
   local force="$3"
   local dry_run="$4"
+  local kind
+
+  kind="$(template_kind "$target")"
 
   dest="$(expand_path "$dest")"
   info "Installing $target"
   info "  to: $dest"
 
-  local source_path rel_path final_path tmp_path
-  while IFS='|' read -r source_path rel_path; do
-    [[ -n "$source_path" ]] || continue
+  local role rel_path final_path tmp_dir template_file role_file adapter_file tmp_path
+  for role in concept-designer aigc-prompt-designer generation-operator; do
+    rel_path="$(output_path_for_role "$kind" "$role")"
     final_path="$dest/$rel_path"
 
     if [[ -e "$final_path" && "$force" != "1" ]]; then
@@ -224,16 +228,30 @@ install_target() {
     fi
 
     if [[ "$dry_run" == "1" ]]; then
-      info "  install: $source_path -> $final_path"
+      info "  generate: templates/$kind/$role.md + roles/$role.md -> $final_path"
       continue
     fi
 
     mkdir -p "$(dirname "$final_path")"
+    tmp_dir="$(mktemp -d)"
+    template_file="$tmp_dir/template.md"
+    role_file="$tmp_dir/role.md"
+    adapter_file=""
+
+    download_file "templates/$kind/$role.md" "$template_file"
+    download_file "roles/$role.md" "$role_file"
+
+    if [[ "$role" == "generation-operator" ]]; then
+      adapter_file="$tmp_dir/lovart.md"
+      download_file "adapters/lovart.md" "$adapter_file"
+    fi
+
     tmp_path="${final_path}.tmp.$$"
-    download_file "$source_path" "$tmp_path"
+    render_template "$template_file" "$role_file" "$adapter_file" "$tmp_path"
     mv "$tmp_path" "$final_path"
+    rm -rf "$tmp_dir"
     info "  installed: $rel_path"
-  done < <(manifest "$target")
+  done
 }
 
 parse_options() {

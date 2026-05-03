@@ -8,24 +8,25 @@ The source of truth is still:
 - `workflows/`
 - `schemas/`
 - `adapters/`
+- `templates/`
 
-Installed platform files must be self-contained because the remote installer downloads only the selected platform's files. If behavior changes, update the source role or workflow first, then mirror the necessary instruction into each platform package.
+Installed platform files are generated at install time and must be self-contained. If behavior changes, update the source role, adapter, or template first.
 
 ## Targets
 
 | Platform | Package Form |
 |---|---|
-| Codex | skills under `platforms/codex/skills/` |
-| Claude Code | skills or instruction files under `platforms/claude/skills/` |
-| OpenCode | agent specs under `platforms/opencode/agents/` |
-| OpenClaw | agent specs under `platforms/openclaw/agents/` |
+| Codex | skills generated from `templates/skill/` |
+| Claude Code | skills generated from `templates/skill/` |
+| OpenCode | agents generated from `templates/agent/` |
+| OpenClaw | agents generated from `templates/agent/` |
 | Human users | Markdown role and workflow manuals |
 
 ## Packaging Rule
 
-Do not duplicate long-form method content unless the target platform requires it. Prefer small platform wrappers that point back to the shared role files.
+Do not commit generated platform files. Keep long-form method content in `roles/` and backend-specific execution notes in `adapters/`.
 
-## CLI Install
+## Install
 
 Use the remote installer:
 
@@ -33,7 +34,7 @@ Use the remote installer:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)"
 ```
 
-The installer asks for a platform, downloads only that platform's required files, and writes them to the target destination. The installed files do not depend on this repository being present locally.
+The installer asks for a platform, downloads the required role, adapter, and template files, renders self-contained output, and writes it to the target destination. The installed files do not depend on this repository being present locally.
 
 Direct target install:
 
@@ -44,13 +45,4 @@ Direct target install:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- openclaw --project .
 ```
 
-Maintainers can also use the repository CLI from a local checkout:
-
-```bash
-./bin/creative-agent-methods install codex
-./bin/creative-agent-methods install claude
-./bin/creative-agent-methods install opencode --dest /path/to/project/.opencode/agents
-./bin/creative-agent-methods install openclaw --dest /path/to/project/.openclaw/agents
-```
-
-Use `--mode link` only for repository development. The default copy mode installs standalone files.
+Use `--dry-run` to preview the generated output paths without writing files.

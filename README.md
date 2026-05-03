@@ -45,7 +45,8 @@ Do not put credentials, browser captures, runtime state, provider-specific secre
 - `workflows/`: task workflows that combine roles.
 - `schemas/`: portable JSON schemas for concept and generation planning artifacts.
 - `adapters/`: backend-specific execution notes.
-- `platforms/`: packaging for Codex, Claude Code, OpenCode, and OpenClaw.
+- `templates/`: platform templates used by the installer.
+- `platforms/`: packaging notes for Codex, Claude Code, OpenCode, and OpenClaw.
 
 ## Roles
 
@@ -84,7 +85,7 @@ Interactive install:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)"
 ```
 
-The installer asks which platform to install, downloads only the required skill or agent files, and writes them to the platform destination.
+The installer asks which platform to install, downloads only the required role, adapter, and template files, generates self-contained skill or agent files, and writes them to the platform destination.
 
 The installed platform files are self-contained. They do not require this repository, the `roles/` directory, or the `adapters/` directory to exist on the user's machine.
 
@@ -108,28 +109,6 @@ Default destinations:
 
 Use `--dest <dir>` to override the destination for one target, `--force` to replace existing files, and `--dry-run` to preview the install.
 
-## Local CLI
+## Maintenance
 
-Maintainers can also run the repository CLI directly from a local checkout:
-
-```bash
-./bin/creative-agent-methods install codex
-```
-
-Or install only the command into `~/.local/bin`:
-
-```bash
-./bin/creative-agent-methods install-cli
-```
-
-Then use:
-
-```bash
-creative-agent-methods install codex
-creative-agent-methods install claude
-creative-agent-methods install opencode --dest /path/to/project/.opencode/agents
-creative-agent-methods install openclaw --dest /path/to/project/.openclaw/agents
-creative-agent-methods install all
-```
-
-By default the CLI copies files. Use `--mode link` to install symlinks back to this repository, and `--force` to replace existing installed files with the same names.
+Do not edit generated platform files by hand. The source of truth is `roles/`, `adapters/`, and `templates/`; `install.sh` renders the platform-specific output at install time.

@@ -1,7 +1,11 @@
 # OpenClaw Packaging
 
-OpenClaw support mirrors the OpenCode agent files unless OpenClaw requires a stricter manifest.
+OpenClaw support mirrors the OpenCode agent template unless OpenClaw requires a stricter manifest.
 
-Provided agent wrappers live under `platforms/openclaw/agents/`.
+Generated agent names:
 
-Use the files in `platforms/opencode/agents/` as the portable baseline when stricter OpenClaw packaging is needed.
+- `concept-designer`
+- `aigc-prompt-designer`
+- `generation-operator`
+
+The installed files are self-contained, but the repository source of truth remains `roles/`, `adapters/`, and `templates/`.
