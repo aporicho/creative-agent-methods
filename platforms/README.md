@@ -27,13 +27,24 @@ Do not duplicate long-form method content unless the target platform requires it
 
 ## CLI Install
 
-Use the remote bootstrap installer:
+Use the remote installer:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)"
+```
+
+The installer asks for a platform, downloads only that platform's required files, and writes them to the target destination.
+
+Direct target install:
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- codex
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- claude
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- opencode --project .
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- openclaw --project .
 ```
 
-Or use the repository CLI from a local checkout:
+Maintainers can also use the repository CLI from a local checkout:
 
 ```bash
 ./bin/creative-agent-methods install codex

@@ -76,26 +76,39 @@ When adding a new backend, add a file under `adapters/` that explains capability
 
 ## Install
 
-This package ships a bootstrap installer and a local CLI for installing the platform wrappers.
+This package ships a lightweight installer for installing only the files needed by the selected platform.
 
-One-command install, Codex by default:
+Interactive install:
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)"
 ```
 
-Install a specific target:
+The installer asks which platform to install, downloads only the required skill or agent files, and writes them to the platform destination.
+
+Direct install:
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- codex
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- claude
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- opencode --dest /path/to/project/.opencode/agents
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- openclaw --dest /path/to/project/.openclaw/agents
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- opencode --project .
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- openclaw --project .
 ```
 
-The bootstrap installer downloads this repository into `~/.creative-agent-methods/repo`, installs the `creative-agent-methods` command into `~/.local/bin`, then installs the selected platform wrapper.
+The remote installer does not clone this repository, does not install a global CLI, and does not keep a package copy on disk.
 
-You can also run the CLI directly from a local checkout:
+Default destinations:
+
+- Codex: `${CODEX_SKILLS_DIR:-~/.codex/skills}`
+- Claude Code: `${CLAUDE_SKILLS_DIR:-~/.claude/skills}`
+- OpenCode: `${OPENCODE_AGENTS_DIR:-<project>/.opencode/agents}`
+- OpenClaw: `${OPENCLAW_AGENTS_DIR:-<project>/.openclaw/agents}`
+
+Use `--dest <dir>` to override the destination for one target, `--force` to replace existing files, and `--dry-run` to preview the install.
+
+## Local CLI
+
+Maintainers can also run the repository CLI directly from a local checkout:
 
 ```bash
 ./bin/creative-agent-methods install codex
@@ -116,12 +129,5 @@ creative-agent-methods install opencode --dest /path/to/project/.opencode/agents
 creative-agent-methods install openclaw --dest /path/to/project/.openclaw/agents
 creative-agent-methods install all
 ```
-
-Default destinations:
-
-- Codex: `${CODEX_SKILLS_DIR:-~/.codex/skills}`
-- Claude Code: `${CLAUDE_SKILLS_DIR:-~/.claude/skills}`
-- OpenCode: `${OPENCODE_AGENTS_DIR:-$PWD/.opencode/agents}`
-- OpenClaw: `${OPENCLAW_AGENTS_DIR:-$PWD/.openclaw/agents}`
 
 By default the CLI copies files. Use `--mode link` to install symlinks back to this repository, and `--force` to replace existing installed files with the same names.

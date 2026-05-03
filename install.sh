@@ -2,45 +2,45 @@
 set -euo pipefail
 
 PROJECT_NAME="creative-agent-methods"
-DEFAULT_REPO_URL="https://github.com/aporicho/creative-agent-methods.git"
-DEFAULT_ARCHIVE_URL_BASE="https://github.com/aporicho/creative-agent-methods/archive/refs/heads"
+DEFAULT_REF="main"
+DEFAULT_RAW_BASE="https://raw.githubusercontent.com/aporicho/creative-agent-methods/${DEFAULT_REF}"
 
 usage() {
   cat <<'EOF'
 Creative Agent Methods installer
 
 Usage:
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- [target] [options]
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)"
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- <target> [options]
 
 Targets:
-  codex      Install Codex skills. Default target.
+  codex      Install Codex skills.
   claude     Install Claude Code skills.
   opencode   Install OpenCode agents.
   openclaw   Install OpenClaw agents.
   all        Install all platform wrappers.
 
-Options after the target are passed to:
-  creative-agent-methods install <target>
+Options:
+  --dest <dir>       Destination directory for one target.
+  --project <dir>    Project directory for opencode/openclaw. Installs into .opencode/.openclaw under it.
+  --force            Replace existing files.
+  --dry-run          Show actions without writing files.
+  -h, --help         Show this help.
+
+Environment:
+  CREATIVE_AGENT_METHODS_RAW_BASE    Raw file base URL. Defaults to GitHub main branch.
+  CREATIVE_AGENT_METHODS_SOURCE_DIR  Local source checkout for testing or offline installs.
+  CODEX_SKILLS_DIR                   Default Codex destination.
+  CLAUDE_SKILLS_DIR                  Default Claude destination.
+  OPENCODE_AGENTS_DIR                Default OpenCode destination.
+  OPENCLAW_AGENTS_DIR                Default OpenClaw destination.
 
 Examples:
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)"
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- codex
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- opencode --dest /path/to/project/.opencode/agents
-
-Environment:
-  CREATIVE_AGENT_METHODS_REPO        Git repository URL.
-  CREATIVE_AGENT_METHODS_REF         Git branch, tag, or ref. Default: main.
-  CREATIVE_AGENT_METHODS_HOME        Install root. Default: ~/.creative-agent-methods.
-  CREATIVE_AGENT_METHODS_SOURCE_DIR  Use an existing local checkout instead of downloading.
-  CREATIVE_AGENT_METHODS_INSTALL_CLI Install ~/.local/bin/creative-agent-methods. Default: 1.
-  CREATIVE_AGENT_METHODS_FORCE       Replace existing installed package files. Default: 1.
-  CREATIVE_AGENT_METHODS_MODE        copy or link. Default: copy.
-
-Target destination environment variables:
-  CODEX_SKILLS_DIR
-  CLAUDE_SKILLS_DIR
-  OPENCODE_AGENTS_DIR
-  OPENCLAW_AGENTS_DIR
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- claude
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- opencode --project .
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/aporicho/creative-agent-methods/main/install.sh)" -- openclaw --project .
 EOF
 }
 
@@ -53,10 +53,6 @@ info() {
   printf '%s\n' "$*"
 }
 
-need_command() {
-  command -v "$1" >/dev/null 2>&1 || die "required command not found: $1"
-}
-
 expand_path() {
   local input="$1"
   case "$input" in
@@ -66,49 +62,215 @@ expand_path() {
   esac
 }
 
-download_with_git() {
-  local repo_url="$1"
-  local ref="$2"
-  local repo_dir="$3"
+is_interactive() {
+  [[ -t 0 ]]
+}
 
-  need_command git
-  mkdir -p "$(dirname "$repo_dir")"
+prompt_target() {
+  if ! is_interactive; then
+    die "no target provided and stdin is not interactive; pass codex, claude, opencode, openclaw, or all"
+  fi
 
-  if [[ -d "$repo_dir/.git" ]]; then
-    info "Updating $PROJECT_NAME from $repo_url"
-    git -C "$repo_dir" remote set-url origin "$repo_url"
-    git -C "$repo_dir" fetch --depth 1 origin "$ref"
-    git -C "$repo_dir" checkout -q FETCH_HEAD
+  cat >&2 <<'EOF'
+Choose a platform to install Creative Agent Methods:
+  1) Codex skills
+  2) Claude Code skills
+  3) OpenCode agents
+  4) OpenClaw agents
+  5) All
+  q) Quit
+EOF
+
+  local choice
+  while true; do
+    printf 'Platform [1-5/q]: ' >&2
+    read -r choice
+    case "$choice" in
+      1|codex|Codex) printf 'codex\n'; return ;;
+      2|claude|Claude) printf 'claude\n'; return ;;
+      3|opencode|OpenCode) printf 'opencode\n'; return ;;
+      4|openclaw|OpenClaw) printf 'openclaw\n'; return ;;
+      5|all|All) printf 'all\n'; return ;;
+      q|Q|quit|exit) exit 0 ;;
+      *) printf 'Please choose 1, 2, 3, 4, 5, or q.\n' >&2 ;;
+    esac
+  done
+}
+
+prompt_project_dir() {
+  local target="$1"
+  local default_project="$PWD"
+  local project
+
+  if ! is_interactive; then
+    printf '%s\n' "$default_project"
+    return
+  fi
+
+  printf 'Project directory for %s [%s]: ' "$target" "$default_project" >&2
+  read -r project
+  if [[ -z "$project" ]]; then
+    project="$default_project"
+  fi
+  printf '%s\n' "$project"
+}
+
+default_dest() {
+  local target="$1"
+  local project_dir="${2:-}"
+
+  case "$target" in
+    codex)
+      printf '%s\n' "${CODEX_SKILLS_DIR:-$HOME/.codex/skills}"
+      ;;
+    claude)
+      printf '%s\n' "${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
+      ;;
+    opencode)
+      if [[ -n "${OPENCODE_AGENTS_DIR:-}" ]]; then
+        printf '%s\n' "$OPENCODE_AGENTS_DIR"
+      else
+        [[ -n "$project_dir" ]] || project_dir="$(prompt_project_dir opencode)"
+        printf '%s/.opencode/agents\n' "$(expand_path "$project_dir")"
+      fi
+      ;;
+    openclaw)
+      if [[ -n "${OPENCLAW_AGENTS_DIR:-}" ]]; then
+        printf '%s\n' "$OPENCLAW_AGENTS_DIR"
+      else
+        [[ -n "$project_dir" ]] || project_dir="$(prompt_project_dir openclaw)"
+        printf '%s/.openclaw/agents\n' "$(expand_path "$project_dir")"
+      fi
+      ;;
+    *)
+      die "unknown target: $target"
+      ;;
+  esac
+}
+
+manifest() {
+  local target="$1"
+  case "$target" in
+    codex)
+      cat <<'EOF'
+platforms/codex/skills/concept-designer/SKILL.md|concept-designer/SKILL.md
+platforms/codex/skills/aigc-prompt-designer/SKILL.md|aigc-prompt-designer/SKILL.md
+platforms/codex/skills/generation-operator/SKILL.md|generation-operator/SKILL.md
+EOF
+      ;;
+    claude)
+      cat <<'EOF'
+platforms/claude/skills/concept-designer/SKILL.md|concept-designer/SKILL.md
+platforms/claude/skills/aigc-prompt-designer/SKILL.md|aigc-prompt-designer/SKILL.md
+platforms/claude/skills/generation-operator/SKILL.md|generation-operator/SKILL.md
+EOF
+      ;;
+    opencode)
+      cat <<'EOF'
+platforms/opencode/agents/concept-designer.md|concept-designer.md
+platforms/opencode/agents/aigc-prompt-designer.md|aigc-prompt-designer.md
+platforms/opencode/agents/generation-operator.md|generation-operator.md
+EOF
+      ;;
+    openclaw)
+      cat <<'EOF'
+platforms/openclaw/agents/concept-designer.md|concept-designer.md
+platforms/openclaw/agents/aigc-prompt-designer.md|aigc-prompt-designer.md
+platforms/openclaw/agents/generation-operator.md|generation-operator.md
+EOF
+      ;;
+    *)
+      die "unknown target: $target"
+      ;;
+  esac
+}
+
+download_file() {
+  local source_path="$1"
+  local output_path="$2"
+  local raw_base="${CREATIVE_AGENT_METHODS_RAW_BASE:-$DEFAULT_RAW_BASE}"
+
+  mkdir -p "$(dirname "$output_path")"
+
+  if [[ -n "${CREATIVE_AGENT_METHODS_SOURCE_DIR:-}" ]]; then
+    local local_source
+    local_source="$(expand_path "$CREATIVE_AGENT_METHODS_SOURCE_DIR")/$source_path"
+    [[ -f "$local_source" ]] || die "local source file not found: $local_source"
+    cp "$local_source" "$output_path"
   else
-    rm -rf "$repo_dir"
-    info "Downloading $PROJECT_NAME from $repo_url"
-    git clone --depth 1 --branch "$ref" "$repo_url" "$repo_dir"
+    command -v curl >/dev/null 2>&1 || die "required command not found: curl"
+    curl -fsSL "${raw_base}/${source_path}" -o "$output_path"
   fi
 }
 
-download_with_archive() {
-  local ref="$1"
-  local repo_dir="$2"
-  local archive_url="${CREATIVE_AGENT_METHODS_ARCHIVE_URL:-${DEFAULT_ARCHIVE_URL_BASE}/${ref}.tar.gz}"
-  local temp_dir
+install_target() {
+  local target="$1"
+  local dest="$2"
+  local force="$3"
+  local dry_run="$4"
 
-  need_command curl
-  need_command tar
+  dest="$(expand_path "$dest")"
+  info "Installing $target"
+  info "  to: $dest"
 
-  temp_dir="$(mktemp -d)"
-  trap 'rm -rf "$temp_dir"' EXIT
+  local source_path rel_path final_path tmp_path
+  while IFS='|' read -r source_path rel_path; do
+    [[ -n "$source_path" ]] || continue
+    final_path="$dest/$rel_path"
 
-  info "Downloading $PROJECT_NAME archive from $archive_url"
-  curl -fsSL "$archive_url" -o "$temp_dir/source.tar.gz"
-  mkdir -p "$(dirname "$repo_dir")"
-  rm -rf "$repo_dir"
-  mkdir -p "$repo_dir"
-  tar -xzf "$temp_dir/source.tar.gz" -C "$temp_dir"
+    if [[ -e "$final_path" && "$force" != "1" ]]; then
+      info "  skip existing: $final_path"
+      continue
+    fi
 
-  local extracted
-  extracted="$(find "$temp_dir" -mindepth 1 -maxdepth 1 -type d -name "${PROJECT_NAME}-*" | head -n 1)"
-  [[ -n "$extracted" ]] || die "could not find extracted project directory"
-  cp -R "$extracted"/. "$repo_dir"/
+    if [[ "$dry_run" == "1" ]]; then
+      info "  install: $source_path -> $final_path"
+      continue
+    fi
+
+    mkdir -p "$(dirname "$final_path")"
+    tmp_path="${final_path}.tmp.$$"
+    download_file "$source_path" "$tmp_path"
+    mv "$tmp_path" "$final_path"
+    info "  installed: $rel_path"
+  done < <(manifest "$target")
+}
+
+parse_options() {
+  DEST=""
+  PROJECT_DIR=""
+  FORCE="0"
+  DRY_RUN="0"
+
+  while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+      --dest)
+        [[ "$#" -ge 2 ]] || die "--dest requires a directory"
+        DEST="$2"
+        shift 2
+        ;;
+      --project)
+        [[ "$#" -ge 2 ]] || die "--project requires a directory"
+        PROJECT_DIR="$2"
+        shift 2
+        ;;
+      --force)
+        FORCE="1"
+        shift
+        ;;
+      --dry-run)
+        DRY_RUN="1"
+        shift
+        ;;
+      -h|--help)
+        usage
+        exit 0
+        ;;
+      *)
+        die "unknown option: $1"
+        ;;
+    esac
+  done
 }
 
 main() {
@@ -117,10 +279,16 @@ main() {
     exit 0
   fi
 
-  local target="codex"
+  local target=""
   if [[ "$#" -gt 0 && "${1:-}" != --* ]]; then
     target="$1"
     shift
+  fi
+
+  parse_options "$@"
+
+  if [[ -z "$target" ]]; then
+    target="$(prompt_target)"
   fi
 
   case "$target" in
@@ -128,39 +296,20 @@ main() {
     *) die "unknown target: $target" ;;
   esac
 
-  local repo_url="${CREATIVE_AGENT_METHODS_REPO:-$DEFAULT_REPO_URL}"
-  local ref="${CREATIVE_AGENT_METHODS_REF:-main}"
-  local install_root
-  install_root="$(expand_path "${CREATIVE_AGENT_METHODS_HOME:-$HOME/.creative-agent-methods}")"
-
-  local repo_dir="$install_root/repo"
-  if [[ -n "${CREATIVE_AGENT_METHODS_SOURCE_DIR:-}" ]]; then
-    repo_dir="$(expand_path "$CREATIVE_AGENT_METHODS_SOURCE_DIR")"
-    [[ -d "$repo_dir" ]] || die "CREATIVE_AGENT_METHODS_SOURCE_DIR does not exist: $repo_dir"
-    info "Using local source: $repo_dir"
+  if [[ "$target" == "all" ]]; then
+    [[ -z "$DEST" ]] || die "--dest can only be used with one target"
+    local each each_dest
+    for each in codex claude opencode openclaw; do
+      each_dest="$(default_dest "$each" "$PROJECT_DIR")"
+      install_target "$each" "$each_dest" "$FORCE" "$DRY_RUN"
+    done
   else
-    if command -v git >/dev/null 2>&1; then
-      download_with_git "$repo_url" "$ref" "$repo_dir"
-    else
-      download_with_archive "$ref" "$repo_dir"
+    local dest="$DEST"
+    if [[ -z "$dest" ]]; then
+      dest="$(default_dest "$target" "$PROJECT_DIR")"
     fi
+    install_target "$target" "$dest" "$FORCE" "$DRY_RUN"
   fi
-
-  local cli="$repo_dir/bin/$PROJECT_NAME"
-  [[ -f "$cli" ]] || die "CLI not found: $cli"
-  chmod +x "$cli"
-
-  if [[ "${CREATIVE_AGENT_METHODS_INSTALL_CLI:-1}" == "1" ]]; then
-    "$cli" install-cli --force
-  fi
-
-  local mode="${CREATIVE_AGENT_METHODS_MODE:-copy}"
-  local install_args=("--mode" "$mode")
-  if [[ "${CREATIVE_AGENT_METHODS_FORCE:-1}" == "1" ]]; then
-    install_args+=("--force")
-  fi
-
-  "$cli" install "$target" "${install_args[@]}" "$@"
 }
 
 main "$@"
