@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_NAME="creative-agent-methods"
 DEFAULT_REF="main"
 DEFAULT_RAW_BASE="https://raw.githubusercontent.com/aporicho/creative-agent-methods/${DEFAULT_REF}"
 
